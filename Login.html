@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShinyHomes - Login</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:"Poppins",sans-serif; }
+    body { 
+      background: url('images/login-bg.jpg') center/cover no-repeat; 
+      display:flex; 
+      align-items:center; 
+      justify-content:center; 
+      min-height:100vh; 
+      position: relative;
+    }
+    /* Dark overlay for readability */
+    body::before {
+      content:"";
+      position:absolute;
+      top:0; left:0;
+      width:100%; height:100%;
+      background: rgba(0,0,0,0.4);
+      z-index:0;
+    }
+
+    .container { 
+      background: rgba(255,255,255,0.25); /* semi-transparent */
+      padding:40px 30px; 
+      border-radius:15px; 
+      box-shadow:0 8px 20px rgba(0,0,0,0.2); 
+      width:100%; 
+      max-width:400px; 
+      text-align:center; 
+      position: relative; 
+      z-index:1;
+      backdrop-filter: blur(10px); /* glass effect */
+    }
+
+    h1 { color:#2b7a78; margin-bottom:20px; }
+
+    form { display:flex; flex-direction:column; gap:15px; }
+
+    input { 
+      padding:12px 15px; 
+      border:none; 
+      border-radius:10px; 
+      font-size:1rem; 
+      background: rgba(255,255,255,0.5); /* transparent input */
+      backdrop-filter: blur(5px); /* frosted effect */
+      color: #333;
+    }
+    input::placeholder { color: #555; }
+
+    button { 
+      padding:12px; 
+      border:none; 
+      border-radius:10px; 
+      background:#2b7a78; 
+      color:white; 
+      font-weight:600; 
+      font-size:1rem; 
+      cursor:pointer; 
+      transition:0.3s; 
+    }
+    button:hover { background:#3aafa9; }
+
+    .footer-text { margin-top:15px; font-size:0.9rem; color:#fff; }
+    .footer-text a { color:#2b7a78; text-decoration:none; font-weight:600; }
+    .footer-text a:hover { text-decoration:underline; }
+
+    @media (max-width:480px) {
+      .container { padding:30px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Login</h1>
+    <form id="loginForm">
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div class="footer-text">
+      Don't have an account? <a href="signin.html">Signin</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", function(e){
+      e.preventDefault();
+      alert("Login successful! Redirecting to homepage...");
+      window.location.href = "Cleaning service.html"; // Redirect to landing page
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ShinyHomes — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --brand:#2b7a78;
+    --brand-2:#3aafa9;
+    --muted:#6b7280;
+    --bg:#f7faf9;
+    --card:#ffffff;
+    --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Poppins",system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#111}
+  header{background:var(--card);border-bottom:1px solid #e6eef0;position:fixed;left:0;right:0;top:0;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:50}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{font-size:20px;font-weight:700;color:var(--brand)}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .btn{background:var(--brand);color:#fff;padding:8px 14px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
+  .btn.ghost{background:transparent;color:var(--brand);border:1px solid rgba(43,122,120,0.12)}
+  .btn.warn{background:var(--danger)}
+  main{padding:100px 28px 40px;max-width:1200px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:18px}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,32,0.04);border:1px solid rgba(16,24,32,0.03)}
+  .kpi{font-size:28px;font-weight:700}
+  .kpi-label{color:var(--muted);font-size:13px}
+  .section{margin-top:14px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .search{flex:1;display:flex;gap:8px}
+  input[type="search"], input[type="text"], select{padding:10px 12px;border-radius:8px;border:1px solid #e6eef0;outline:none;background:#fff}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:10px 8px;text-align:left;border-bottom:1px solid #f1f5f6}
+  th{font-weight:700;color:#374151;font-size:13px}
+  .small{font-size:12px;color:var(--muted)}
+  .actions{display:flex;gap:8px;align-items:center}
+  .pill{background:#eef6f5;color:var(--brand);padding:6px 10px;border-radius:999px;font-weight:600;font-size:12px}
+  .export{background:transparent;border:1px solid #e6eef0;padding:8px 10px;border-radius:8px;cursor:pointer}
+  .hidden{display:none}
+  footer{max-width:1200px;margin:18px auto;padding:8px 28px;color:var(--muted);font-size:13px}
+  /* responsive */
+  @media (max-width:980px){
+    .grid{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:640px){
+    .grid{grid-template-columns:1fr}
+    header{padding:0 12px}
+    main{padding:92px 12px 24px}
+  }
+
+  /* admin login modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.48);display:flex;align-items:center;justify-content:center;z-index:1000}
+  .modal{width:420px;background:white;padding:22px;border-radius:12px;box-shadow:0 10px 40px rgba(2,6,23,0.3)}
+  .modal h3{margin:0 0 6px;font-size:18px;color:#111}
+  .field{margin:8px 0;display:flex;flex-direction:column;gap:6px}
+  .hint{font-size:13px;color:var(--muted)}
+  .token-row{display:flex;gap:8px;align-items:center}
+  .danger-note{background:#fff4f4;border:1px solid #fde3e3;padding:8px;border-radius:8px;color:#9b2c2c;font-size:13px;margin-top:8px}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">🧽 ShinyHomes Admin</div>
+    <div class="small" style="color:var(--muted);font-weight:600">Dashboard</div>
+  </div>
+
+  <div class="top-actions">
+    <div id="tokenDisplay" class="small" style="color:var(--muted);margin-right:8px"></div>
+    <button class="btn ghost" id="refreshBtn" title="Refresh data">Refresh</button>
+    <button class="btn" id="exportAllBtn" title="Export all CSV">Export CSV</button>
+    <button class="btn warn" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<main>
+  <!-- KPIs -->
+  <div class="grid">
+    <div class="card">
+      <div class="kpi" id="kpiUsers">0</div>
+      <div class="kpi-label">Registered Users</div>
+    </div>
+    <div class="card">
+      <div class="kpi" id="kpiActive">0</div>
+      <div class="kpi-label">Active Sessions</div>
+    </div>
+    <div class="card">
+      <div class="kpi" id="kpiRevenue">$0.00</div>
+      <div class="kpi-label">Total Booked (Amount)</div>
+    </div>
+  </div>
+
+  <!-- Messages table -->
+  <div class="card section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <strong>Messages</strong>
+        <div class="small">All contact form messages</div>
+      </div>
+      <div class="row">
+        <input type="search" id="msgSearch" placeholder="Search messages (name / email / message)">
+        <button class="export" id="exportMsg">Export</button>
+        <button class="btn ghost" id="clearMsgs">Clear (demo)</button>
+      </div>
+    </div>
+
+    <div style="overflow:auto;max-height:320px">
+      <table id="messagesTable" aria-live="polite">
+        <thead><tr><th>When</th><th>Name</th><th>Email</th><th>Message</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Users & Active sessions & Bookings -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <strong>Registered / Signed-in Users</strong>
+          <div class="small">All users and signup info</div>
+        </div>
+        <div class="row">
+          <input type="search" id="userSearch" placeholder="Search users (name / email)">
+          <button class="export" id="exportUsers">Export</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto;max-height:320px">
+        <table id="usersTable">
+          <thead><tr><th>Signed Up</th><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <strong>Active Sessions</strong>
+          <div class="small">Logged-in people (current sessions)</div>
+        </div>
+        <div class="row">
+          <button class="export" id="exportSessions">Export</button>
+        </div>
+      </div>
+
+      <div style="overflow:auto;max-height:320px">
+        <table id="sessionsTable">
+          <thead><tr><th>Since</th><th>Name</th><th>Email</th><th>IP / Device</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookings -->
+  <div class="card section" style="margin-top:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <strong>Bookings</strong>
+        <div class="small">Service bookings, amounts and details</div>
+      </div>
+      <div class="row">
+        <input type="search" id="bookingSearch" placeholder="Search bookings (service / email)">
+        <select id="bookingFilter">
+          <option value="">All services</option>
+        </select>
+        <button class="export" id="exportBookings">Export</button>
+      </div>
+    </div>
+
+    <div style="overflow:auto;max-height:420px">
+      <table id="bookingsTable">
+        <thead><tr><th>Booked At</th><th>User</th><th>Service(s)</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="height:40px"></div>
+</main>
+
+<footer>Admin UI — demo only. For production: protect endpoints, require server-side auth & role checks. </footer>
+
+
+<!-- Admin login modal (demo) -->
+<div id="adminModal" class="modal-backdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <h3 id="adminTitle">Admin Login</h3>
+    <div class="hint">Enter admin token (server-issued) OR demo password <strong>admin123</strong>.</div>
+    <div class="field">
+      <label class="small">Admin Token (preferred for production)</label>
+      <div class="token-row">
+        <input id="adminToken" type="text" placeholder="Paste API token / JWT here" style="flex:1" />
+        <button class="btn" id="useTokenBtn">Use Token</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="small">Demo password (insecure)</label>
+      <input id="adminPassword" type="password" placeholder="admin password (demo only)" />
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn ghost" id="closeModalBtn">Close</button>
+      <button class="btn" id="loginBtn">Login</button>
+    </div>
+
+    <div class="danger-note">
+      This admin modal is a demo. For real security, implement server-side authentication, sessions, TLS, and role checks.
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+  Admin dashboard (frontend-only)
+  - Replace the `API_BASE` and endpoints with your backend routes.
+  - Backend should validate admin auth and return JSON arrays:
+    GET /api/messages -> [{id, name, email, message, createdAt}, ...]
+    GET /api/users -> [{id, name, email, role, createdAt}, ...]
+    GET /api/sessions -> [{id, name, email, ip, device, startedAt}, ...]
+    GET /api/bookings -> [{id, user:{name,email}, services:[{name,qty,price}], amount, status, createdAt}, ...]
+*/
+
+const API_BASE = ''; // e.g. '/api' or 'https://example.com/api' — set to empty for demo mock
+let AUTH_TOKEN = null; // set when admin enters token
+
+// Demo/mock data used if no API_BASE is provided
+const MOCK = {
+  messages: [
+    { id:1, name:'Alice', email:'alice@example.com', message:'Need weekend cleaning', createdAt:'2025-10-18T09:12:00Z' },
+    { id:2, name:'Bob', email:'bob@example.com', message:'Do you do windows?', createdAt:'2025-10-18T11:05:00Z' }
+  ],
+  users: [
+    { id:1, name:'Alice', email:'alice@example.com', role:'user', createdAt:'2025-01-10T08:00:00Z' },
+    { id:2, name:'Admin User', email:'admin@shinyhomes.com', role:'admin', createdAt:'2024-11-20T09:30:00Z' }
+  ],
+  sessions: [
+    { id:1, name:'Alice', email:'alice@example.com', ip:'203.0.113.12', device:'Chrome Mac', startedAt:'2025-10-19T08:00:00Z' }
+  ],
+  bookings: [
+    { id:1, user:{name:'Alice',email:'alice@example.com'}, services:[{name:'Floor Cleaning', qty:2, price:50}], amount:100, status:'paid', createdAt:'2025-10-18T10:00:00Z' },
+    { id:2, user:{name:'Bob',email:'bob@example.com'}, services:[{name:'Garden', qty:1, price:30},{name:'Rooms', qty:2, price:40}], amount:110, status:'pending', createdAt:'2025-10-18T12:00:00Z' }
+  ]
+};
+
+// helpers
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const formatDate = s => {
+  try { const d = new Date(s); return d.toLocaleString(); } catch(e){ return s; }
+};
+const csvEscape = v => `"${String(v).replace(/"/g,'""')}"`;
+
+// show login modal on first load
+const modal = document.getElementById('adminModal');
+const tokenDisplay = document.getElementById('tokenDisplay');
+
+function showModal(){ modal.style.display='flex'; }
+function hideModal(){ modal.style.display='none'; }
+
+// simple demo login
+$('#loginBtn').addEventListener('click', () => {
+  const pw = $('#adminPassword').value.trim();
+  const token = $('#adminToken').value.trim();
+  if(token){
+    AUTH_TOKEN = token;
+    tokenDisplay.textContent = 'Token: ' + (token.length>10 ? token.slice(0,10)+'...' : token);
+    hideModal();
+    initDashboard();
+    return;
+  }
+  if(pw === 'admin123'){ // demo password
+    AUTH_TOKEN = 'DEMO-TOKEN';
+    tokenDisplay.textContent = 'Demo admin';
+    hideModal();
+    initDashboard();
+    return;
+  }
+  alert('Invalid demo password. For production use real server token.');
+});
+
+// Use token button
+$('#useTokenBtn').addEventListener('click', () => {
+  const token = $('#adminToken').value.trim();
+  if(token){ AUTH_TOKEN = token; tokenDisplay.textContent = 'Token: ' + (token.length>10?token.slice(0,10)+'...':token); hideModal(); initDashboard(); }
+});
+
+// close modal (demo)
+$('#closeModalBtn').addEventListener('click', ()=>{ /* do not allow closing for demo? we allow */ hideModal(); });
+
+// logout
+$('#logoutBtn').addEventListener('click', ()=>{ if(confirm('Logout admin?')){ AUTH_TOKEN = null; tokenDisplay.textContent=''; showModal(); } });
+
+// refresh button
+$('#refreshBtn').addEventListener('click', ()=> loadAll());
+
+// CSV exports
+$('#exportAllBtn').addEventListener('click', ()=> {
+  exportCSV('messages'); exportCSV('users'); exportCSV('sessions'); exportCSV('bookings');
+  alert('CSV downloads triggered (4 files).');
+});
+$('#exportMsg').addEventListener('click', ()=>exportCSV('messages'));
+$('#exportUsers').addEventListener('click', ()=>exportCSV('users'));
+$('#exportSessions').addEventListener('click', ()=>exportCSV('sessions'));
+$('#exportBookings').addEventListener('click', ()=>exportCSV('bookings'));
+
+// clear messages demo (client-side)
+$('#clearMsgs').addEventListener('click', ()=> {
+  if(confirm('Clear demo messages? This only clears mock data in the UI.')) {
+    if(API_BASE) { fetch(`${API_BASE}/messages`, { method:'DELETE', headers: authHeader() }).then(()=>loadMessages()); }
+    else { MOCK.messages = []; loadMessages(); }
+  }
+});
+
+// searching
+$('#msgSearch').addEventListener('input', ()=> filterTable('messages', $('#msgSearch').value));
+$('#userSearch').addEventListener('input', ()=> filterTable('users', $('#userSearch').value));
+$('#bookingSearch').addEventListener('input', ()=> filterTable('bookings', $('#bookingSearch').value));
+$('#bookingFilter').addEventListener('change', ()=> filterTable('bookings', $('#bookingFilter').value));
+
+// build auth header helper
+function authHeader(){
+  if(!AUTH_TOKEN) return {};
+  return { 'Authorization': 'Bearer ' + AUTH_TOKEN };
+}
+
+// fetch wrapper that falls back to mock
+async function fetchJson(path){
+  if(!API_BASE){
+    // route mock
+    if(path.endsWith('/messages')) return JSON.parse(JSON.stringify(MOCK.messages));
+    if(path.endsWith('/users')) return JSON.parse(JSON.stringify(MOCK.users));
+    if(path.endsWith('/sessions')) return JSON.parse(JSON.stringify(MOCK.sessions));
+    if(path.endsWith('/bookings')) return JSON.parse(JSON.stringify(MOCK.bookings));
+    return [];
+  }
+  // real fetch
+  const res = await fetch(API_BASE + path, { headers: { 'Content-Type':'application/json', ...authHeader() }});
+  if(!res.ok) throw new Error('Network error ' + res.status);
+  return res.json();
+}
+
+// load all
+async function loadAll(){
+  try {
+    const [messages, users, sessions, bookings] = await Promise.all([
+      fetchJson('/messages'),
+      fetchJson('/users'),
+      fetchJson('/sessions'),
+      fetchJson('/bookings')
+    ]);
+    renderMessages(messages);
+    renderUsers(users);
+    renderSessions(sessions);
+    renderBookings(bookings);
+  } catch(err){
+    console.error('Failed to load:', err);
+    // fallback to mock if available
+    renderMessages(MOCK.messages);
+    renderUsers(MOCK.users);
+    renderSessions(MOCK.sessions);
+    renderBookings(MOCK.bookings);
+  }
+}
+
+// renderers
+function renderMessages(messages){
+  const tbody = $('#messagesTable tbody'); tbody.innerHTML = '';
+  messages.slice().reverse().forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="small">${formatDate(m.createdAt)}</td><td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email)}</td><td>${escapeHtml(m.message)}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderUsers(users){
+  $('#kpiUsers').textContent = users.length;
+  const tbody = $('#usersTable tbody'); tbody.innerHTML = '';
+  users.slice().reverse().forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="small">${formatDate(u.createdAt)}</td><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.role || 'user')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderSessions(sessions){
+  $('#kpiActive').textContent = sessions.length;
+  const tbody = $('#sessionsTable tbody'); tbody.innerHTML = '';
+  sessions.forEach(s=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="small">${formatDate(s.startedAt)}</td><td>${escapeHtml(s.name)}</td><td>${escapeHtml(s.email)}</td><td class="small">${escapeHtml(s.ip || '')} · ${escapeHtml(s.device || '')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderBookings(bookings){
+  // total revenue
+  const total = bookings.reduce((sum,b)=>sum + (Number(b.amount)||0), 0);
+  $('#kpiRevenue').textContent = '$' + total.toFixed(2);
+
+  // populate service filter
+  const serviceSet = new Set();
+  bookings.forEach(b => b.services && b.services.forEach(s => serviceSet.add(s.name)));
+  const filter = $('#bookingFilter');
+  filter.innerHTML = '<option value="">All services</option>';
+  Array.from(serviceSet).forEach(s => {
+    const o = document.createElement('option'); o.value = s; o.textContent = s; filter.appendChild(o);
+  });
+
+  const tbody = $('#bookingsTable tbody'); tbody.innerHTML = '';
+  bookings.slice().reverse().forEach(b=>{
+    const servicesTxt = (b.services||[]).map(s => `${s.name} x${s.qty} ($${s.price})`).join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="small">${formatDate(b.createdAt)}</td>
+      <td>${escapeHtml(b.user?.name||'Guest')}<div class="small">${escapeHtml(b.user?.email||'')}</div></td>
+      <td>${escapeHtml(servicesTxt)}</td>
+      <td>$${Number(b.amount||0).toFixed(2)}</td>
+      <td><span class="pill">${escapeHtml(b.status||'unknown')}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// simple filter function: rebuilds view using current mock/fetched arrays
+function filterTable(type, filterText){
+  filterText = (filterText||'').toLowerCase().trim();
+  // If using real API we could call server with query params instead.
+  const map = {
+    messages: () => (API_BASE? null : MOCK.messages),
+    users: () => (API_BASE? null : MOCK.users),
+    bookings: () => (API_BASE? null : MOCK.bookings),
+    sessions: () => (API_BASE? null : MOCK.sessions)
+  };
+  // If API_BASE exists, just re-load all (server-side filtering recommended)
+  if(API_BASE){
+    loadAll();
+    return;
+  }
+  // Use mock dataset
+  if(type === 'messages'){
+    const filtered = MOCK.messages.filter(m => (m.name+m.email+m.message).toLowerCase().includes(filterText));
+    renderMessages(filtered);
+  } else if(type === 'users'){
+    const filtered = MOCK.users.filter(u => (u.name+u.email).toLowerCase().includes(filterText));
+    renderUsers(filtered);
+  } else if(type === 'bookings'){
+    const filtered = MOCK.bookings.filter(b => {
+      const combined = `${b.user?.email||''} ${b.services?.map(s=>s.name).join(' ')}`;
+      if($('#bookingFilter').value) return combined.toLowerCase().includes(filterText) && combined.toLowerCase().includes($('#bookingFilter').value.toLowerCase());
+      return combined.toLowerCase().includes(filterText);
+    });
+    renderBookings(filtered);
+  }
+}
+
+// CSV export utility
+function exportCSV(type){
+  let rows = [], filename = 'export.csv';
+  if(type==='messages'){ rows = MOCK.messages; filename='messages.csv'; if(API_BASE) fetchJson('/messages').then(data=>downloadCSV(data,filename)); else downloadCSV(rows,filename); return; }
+  if(type==='users'){ rows = MOCK.users; filename='users.csv'; if(API_BASE) fetchJson('/users').then(data=>downloadCSV(data,filename)); else downloadCSV(rows,filename); return; }
+  if(type==='sessions'){ rows = MOCK.sessions; filename='sessions.csv'; if(API_BASE) fetchJson('/sessions').then(data=>downloadCSV(data,filename)); else downloadCSV(rows,filename); return; }
+  if(type==='bookings'){ rows = MOCK.bookings; filename='bookings.csv'; if(API_BASE) fetchJson('/bookings').then(data=>downloadCSV(data,filename)); else downloadCSV(rows,filename); return; }
+}
+
+function downloadCSV(rows, filename){
+  if(!rows || !rows.length){ alert('No rows to export'); return; }
+  const keys = Object.keys(rows[0]);
+  const csv = [keys.join(',')].concat(rows.map(r => keys.map(k => csvEscape((typeof r[k] === 'object')? JSON.stringify(r[k]) : (r[k]===undefined?'':r[k]))).join(','))).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+// escape helper
+function escapeHtml(str){ if(!str && str!==0) return ''; return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// initialization: poll data
+let pollInterval = null;
+function initDashboard(){
+  loadAll();
+  // start polling every 30 seconds
+  if(pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(()=>{ loadAll(); }, 30000);
+}
+
+// initial show modal
+showModal();
+
+// If you want to auto-login during development uncomment these lines:
+// AUTH_TOKEN = 'DEMO'; tokenDisplay.textContent='Demo token'; initDashboard();
+
+</script>
+</body>
+</html>

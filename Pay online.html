@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book & Pay Online</title>
+<style>
+body {
+  font-family: "Poppins", sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+}
+.container {
+  max-width: 600px;
+  margin: 100px auto;
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+h1 {
+  text-align: center;
+  color: #2b7a78;
+  margin-bottom: 20px;
+}
+.amount {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+/* Payment logos */
+.payment-logos {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+.payment-logos img {
+  width: 60px;
+  height: auto;
+  transition: 0.3s;
+  cursor: pointer;
+}
+.payment-logos img:hover {
+  transform: scale(1.1);
+}
+/* Payment methods buttons */
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+.payment-methods button {
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.payment-methods button.selected {
+  background: #2b7a78;
+  color: white;
+}
+.payment-methods button:hover:not(.selected) {
+  background: #3aafa9;
+  color: white;
+}
+.pay-btn {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  background: #2b7a78;
+  color: white;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.pay-btn:hover {
+  background: #3aafa9;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Book & Pay Online</h1>
+  <div class="amount">Total Amount: $<span id="totalAmount">0</span></div>
+
+  <!-- Payment Logos -->
+  <div class="payment-logos">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="visa">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png" alt="mastercard">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="paypal">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/768px-Stripe_Logo%2C_revised_2016.svg.png?20240909030005" alt="stripe">
+    <img src="https://www.svgrepo.com/show/395853/bank.svg" alt="banktransfer">
+  </div>
+
+  <div class="payment-methods">
+    <button data-method="visa">Visa</button>
+    <button data-method="mastercard">Mastercard</button>
+    <button data-method="paypal">PayPal</button>
+    <button data-method="stripe">Stripe</button>
+    <button data-method="banktransfer">Bank Transfer</button>
+  </div>
+
+  <button class="pay-btn" id="payBtn">Pay Now</button>
+</div>
+
+<script>
+let totalAmount = 0;
+let selectedMethod = null;
+
+// Get amount from query param (e.g. ?amount=120)
+const urlParams = new URLSearchParams(window.location.search);
+if(urlParams.has('amount')){
+  totalAmount = parseFloat(urlParams.get('amount'));
+  document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+}
+
+// Select method by button
+const methodButtons = document.querySelectorAll('.payment-methods button');
+methodButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    selectedMethod = btn.dataset.method;
+    methodButtons.forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
+
+// Select method by logo
+const logos = document.querySelectorAll('.payment-logos img');
+logos.forEach(logo=>{
+  logo.addEventListener('click', ()=>{
+    const method = logo.alt.toLowerCase().replace(' ', '');
+    selectedMethod = method;
+    methodButtons.forEach(b=>b.classList.remove('selected'));
+    methodButtons.forEach(b=>{
+      if(b.dataset.method === method){
+        b.classList.add('selected');
+      }
+    });
+  });
+});
+
+// Handle Pay Now click
+document.getElementById('payBtn').addEventListener('click', ()=>{
+  if(!selectedMethod){
+    alert("Please select a payment method!");
+    return;
+  }
+  if(totalAmount <= 0){
+    alert("Invalid amount!");
+    return;
+  }
+
+  let paymentUrl = "";
+
+  switch(selectedMethod){
+    case "visa":
+      paymentUrl = "https://www.visa.com/pay-with-visa.html";
+      break;
+    case "mastercard":
+      paymentUrl = "https://www.mastercard.us/en-us/personal/get-support/secure-payments.html";
+      break;
+    case "paypal":
+      paymentUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=yourbusiness@example.com&amount=${totalAmount}&currency_code=USD`;
+      break;
+    case "stripe":
+      paymentUrl = "https://stripe.com/payments/checkout";
+      break;
+    case "banktransfer":
+      alert(`Please transfer $${totalAmount.toFixed(2)} to our bank account:\n\nBank: XYZ Bank\nAccount Name: ShinyHomes\nAccount Number: 1234567890\n\nThank you!`);
+      return;
+  }
+
+  // Open real payment page
+  window.open(paymentUrl, "_blank");
+});
+</script>
+
+</body>
+</html>
